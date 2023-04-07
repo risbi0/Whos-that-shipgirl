@@ -1,6 +1,7 @@
 from names import SHIP_NAMES
 from dotenv import load_dotenv
 from asyncio import TimeoutError
+from discord.ext import commands
 import discord, os, random, json, math
 
 load_dotenv()
@@ -52,7 +53,7 @@ class Menu(discord.ui.View):
 			loop = True
 			while loop:
 				try:
-					message = await client.wait_for('message', check=check, timeout=20)
+					message = await bot.wait_for('message', check=check, timeout=20)
 					# score the player who guessed correctly
 					if message.content == ship_name or message.content == ship_name.lower():
 						player_id = message.author.id
@@ -122,8 +123,8 @@ class Leaderboard(discord.ui.View):
 		await interaction.response.defer()
 		await self.update_message(self.data, False, True)
 
-	async def send(self, message):
-		self.message = await message.channel.send(view=self)
+	async def send(self, ctx):
+		self.message = await ctx.channel.send(view=self)
 		await self.update_message(self.data, True, False)
 
 	def create_embed(self, record):
@@ -131,7 +132,7 @@ class Leaderboard(discord.ui.View):
 		record = dict(sorted(record.items(), key=lambda item: item[1], reverse=True))
 
 		for index, (player_id, player_score) in enumerate(record.items()):
-			player = client.get_user(int(player_id))
+			player = bot.get_user(int(player_id))
 			embed.add_field(
 				name=f'{index + 1}. {player.name}#{player.discriminator}',
 				value=player_score,
@@ -162,27 +163,21 @@ class Leaderboard(discord.ui.View):
 		data = dict(list(data.items())[from_page:until_page])
 		await self.message.edit(embed=self.create_embed(data), view=self)
 
-client = discord.Client(intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
-@client.event
-async def on_ready():
-	print(f'Logged in as {client.user}')
-
-@client.event
-async def on_message(message):
+@bot.command()
+async def start(ctx):
 	global ship_names, record
 
-	if message.author.bot:
-		return
+	ship_names = SHIP_NAMES.copy()
+	record = {}
+	await ctx.send(view=Menu())
 
-	if message.content.startswith('!start'):
-		ship_names = SHIP_NAMES.copy()
-		record = {}
-		await message.channel.send(view=Menu())
-	elif message.content.startswith('!leaderboard'):
-		server_id = str(message.guild.id)
-		leaderboard = Leaderboard()
-		leaderboard.data = leaderboard_data[server_id]
-		await leaderboard.send(message)
+@bot.command()
+async def leaderboard(ctx):
+	server_id = str(ctx.guild.id)
+	leaderboard = Leaderboard()
+	leaderboard.data = leaderboard_data[server_id]
+	await leaderboard.send(ctx)
 
-client.run(TOKEN)
+bot.run(TOKEN)
