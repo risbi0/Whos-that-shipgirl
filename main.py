@@ -9,7 +9,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 with open('leaderboard.json', 'r') as f:
     leaderboard_data = json.load(f)
 
-class View(discord.ui.View):
+class Menu(discord.ui.View):
 	global ship_names, record
 
 	@discord.ui.button(label='Join Game', style=discord.ButtonStyle.primary)
@@ -178,7 +178,7 @@ async def on_message(message):
 	if message.content.startswith('!start'):
 		ship_names = SHIP_NAMES.copy()
 		record = {}
-		await message.channel.send(view=View())
+		await message.channel.send(view=Menu())
 	elif message.content.startswith('!leaderboard'):
 		server_id = str(message.guild.id)
 		leaderboard = Leaderboard()
