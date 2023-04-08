@@ -136,15 +136,29 @@ class Leaderboard(discord.ui.View):
 		self.message = await ctx.channel.send(view=self)
 		await self.update_message(self.data, True, False)
 
+	def add_ordinal_suffix(self, num):
+		if 10 <= num % 100 <= 20:
+			suffix = 'th'
+		else:
+			suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(num % 10, 'th')
+
+		return f'{num}{suffix}'
+
 	def create_embed(self, record):
-		embed = discord.Embed(title='Leaderboard')
+		rank = list(self.data).index(self.user_id) + 1
+		embed = discord.Embed(title=f'{self.server_name} Leaderboard')
+		embed.set_footer(text=f'Page {self.current_page}/{self.total_pages} • Your leaderboard rank: {self.add_ordinal_suffix(rank)}')
+
+		if hasattr(self, 'server_icon_url'):
+			embed.set_thumbnail(url=self.server_icon_url)
+
 		record = dict(sorted(record.items(), key=lambda item: item[1], reverse=True))
 
 		for index, (player_id, player_score) in enumerate(record.items()):
 			player = bot.get_user(int(player_id))
 			embed.add_field(
-				name=f'{index + 1}. {player.name}#{player.discriminator}',
-				value=player_score,
+				name='',
+				value=f'**{index + 1}.** {player.name}#{player.discriminator}  **•**  {player_score}',
 				inline=False
 			)
 
@@ -188,9 +202,18 @@ async def start(ctx):
 
 @bot.command()
 async def leaderboard(ctx):
-	server_id = str(ctx.guild.id)
+	server_id = ctx.guild.id
+	has_server_icon = hasattr(ctx.guild.icon, 'url')
+
 	leaderboard = Leaderboard()
-	leaderboard.data = leaderboard_data[server_id]
+	leaderboard.server_name = bot.get_guild(server_id)
+	leaderboard.data = leaderboard_data[str(server_id)]
+	leaderboard.user_id = str(ctx.author.id)
+	leaderboard.total_pages = len(leaderboard.data)
+
+	if has_server_icon:
+		leaderboard.server_icon_url = ctx.guild.icon.url
+
 	await leaderboard.send(ctx)
 
 keep_alive()
