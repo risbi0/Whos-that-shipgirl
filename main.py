@@ -47,13 +47,13 @@ class Menu(discord.ui.View):
 		players_msg = '\n'.join([f'<@{player}>' for player in record.keys()])
 		await interaction.response.send_message(content=f'Starting game with players:\n{players_msg}')
 
-		for i in range(1, 4):
+		for i in range(1, 11):
 			# get random shipgirl
 			rand_ship_index = random.randint(0, len(ship_names))
 			ship_name = ship_names[rand_ship_index]
 			ship_names.remove(ship_name)
 
-			embed = discord.Embed(title=f'Round {i} of 3')
+			embed = discord.Embed(title=f'Round {i} of 10')
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/hidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
 
