@@ -42,16 +42,20 @@ class Menu(discord.ui.View):
 		def check(msg):
 			return msg.author.id in record and msg.channel == interaction.channel
 
+		async def show_unhidden(t, ship_name):
+			embed = discord.Embed(title=t)
+			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/unhidden/{ship_name.replace(' ', '%20')}.png")
+			await interaction.channel.send(embed=embed)
+
 		for i in range(1, 4):
 			# get random shipgirl
 			rand_ship_index = random.randint(0, len(ship_names))
 			ship_name = ship_names[rand_ship_index]
 			ship_names.remove(ship_name)
 
-			await interaction.channel.send(f'Round {i} of 3')
-			with open(f'img/hidden/{ship_name}.png', 'rb') as image:
-				img = discord.File(image)
-				await interaction.channel.send(file=img)
+			embed = discord.Embed(title=f'Round {i} of 3')
+			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/hidden/{ship_name.replace(' ', '%20')}.png")
+			await interaction.channel.send(embed=embed)
 
 			# wait for a correct answer for 20 seconds
 			loop = True
@@ -65,18 +69,12 @@ class Menu(discord.ui.View):
 						loop = False
 
 						# show actual image w/ name
-						await interaction.channel.send('Correct!')
-						with open(f'img/unhidden/{ship_name}.png', 'rb') as image:
-							img = discord.File(image)
-							await interaction.channel.send(file=img)
+						await show_unhidden('Correct!', ship_name)
+
 				except TimeoutError:
 					# show next image when no correct answer sent in 20 seconds
-					await interaction.channel.send(f'Times up! Correct answer: {ship_name}')
-					with open(f'img/unhidden/{ship_name}.png', 'rb') as image:
-						img = discord.File(image)
-						await interaction.channel.send(file=img)
-
 					loop = False
+					await show_unhidden(f'Times up! Correct answer: {ship_name}', ship_name)
 
 		# display final scores
 		await interaction.channel.send('**Final Scores**')
