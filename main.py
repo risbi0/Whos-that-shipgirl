@@ -86,14 +86,9 @@ class Menu(discord.ui.View):
 		for player_id, player_score in record.items():
 			await interaction.channel.send(f'<@{player_id}> {player_score}')
 
-		self.update_leaderboard(str(interaction.guild_id), record)
+		self.update_leaderboard(str(interaction.guild_id))
 
-	def update_leaderboard(self, server_id, record):
-		global leaderboard_data
-
-		if server_id not in leaderboard_data:
-			leaderboard_data[server_id] = {}
-
+	def update_leaderboard(self, server_id):
 		for player_id, player_score in record.items():
 			player_id = str(player_id)
 			if player_id not in leaderboard_data[server_id]:
