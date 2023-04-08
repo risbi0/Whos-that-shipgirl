@@ -28,9 +28,9 @@ class Menu(discord.ui.View):
 		if interaction.user.id in record:
 			del record[interaction.user.id]
 			await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in record.keys()])}")
-			await interaction.followup.send(content=f'You have left the game.', ephemeral=True)
+			await interaction.followup.send(content='You have left the game.', ephemeral=True)
 		else:
-			await interaction.response.send_message(content=f'You haven\'t joined the game.', ephemeral=True)
+			await interaction.response.send_message(content='You haven\'t joined the game.', ephemeral=True)
 
 	@discord.ui.button(label='Start Game', style=discord.ButtonStyle.success)
 	async def start_game(self, interaction, button):
