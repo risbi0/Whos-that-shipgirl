@@ -206,8 +206,7 @@ async def leaderboard(ctx):
 	leaderboard.user_id = str(ctx.author.id)
 	leaderboard.current_page = 1
 	leaderboard.entries_per_page = 10
-	leaderboard.total_pages = len(leaderboard.data)
-	leaderboard.last_page_num = math.ceil(leaderboard.total_pages / leaderboard.entries_per_page)
+	leaderboard.last_page_num = math.ceil(len(leaderboard.data) / leaderboard.entries_per_page)
 
 	if has_server_icon:
 		leaderboard.server_icon_url = ctx.guild.icon.url
