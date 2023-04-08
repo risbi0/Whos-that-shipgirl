@@ -169,6 +169,10 @@ class Leaderboard(discord.ui.View):
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
+@bot.event
+async def on_ready():
+    await bot.change_presence(activity=discord.Game(name='!start !leaderboard'))
+
 @bot.command()
 async def start(ctx):
 	global ship_names, record
