@@ -14,20 +14,20 @@ with open('leaderboard.json', 'r') as f:
     leaderboard_data = json.load(f)
 
 class Menu(discord.ui.View):
-	global ship_names, record
+	global ship_names, game_data
 
 	@discord.ui.button(label='Join Game', style=discord.ButtonStyle.primary)
 	async def join_game(self, interaction, button):
 		# initialize player score
-		record[interaction.user.id] = 0
-		await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in record.keys()])}")
+		game_data[interaction.user.id] = 0
+		await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data.keys()])}")
 		await interaction.followup.send(content='You have joined the game.', ephemeral=True)
 
 	@discord.ui.button(label='Leave Game', style=discord.ButtonStyle.danger)
 	async def leave_game(self, interaction, button):
-		if interaction.user.id in record:
-			del record[interaction.user.id]
-			await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in record.keys()])}")
+		if interaction.user.id in game_data:
+			del game_data[interaction.user.id]
+			await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data.keys()])}")
 			await interaction.followup.send(content='You have left the game.', ephemeral=True)
 		else:
 			await interaction.response.send_message(content='You haven\'t joined the game.', ephemeral=True)
@@ -35,21 +35,21 @@ class Menu(discord.ui.View):
 	@discord.ui.button(label='Start Game', style=discord.ButtonStyle.success)
 	async def start_game(self, interaction, button):
 		def check(msg):
-			return msg.author.id in record and msg.channel == interaction.channel
+			return msg.author.id in game_data and msg.channel == interaction.channel
 
 		async def show_unhidden(t, ship_name):
 			embed = discord.Embed(title=t, description=ship_name)
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/unhidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
 
-		if len(record) == 0:
+		if len(game_data) == 0:
 			await interaction.response.send_message(content='No players have joined.')
 			return
 
 		# delete message so no one messes with the buttons mid-game
 		await interaction.message.delete()
 
-		players_msg = '\n'.join([f'<@{player}>' for player in record.keys()])
+		players_msg = '\n'.join([f'<@{player_id}>' for player_id in game_data.keys()])
 		await interaction.response.send_message(content=f'Starting game with players:\n{players_msg}')
 
 		for i in range(1, 11):
@@ -72,7 +72,7 @@ class Menu(discord.ui.View):
 					# score the player who guessed correctly
 					if  answer == ship_name.lower() or answer in alt_names:
 						player_id = message.author.id
-						record[player_id] += 1
+						game_data[player_id] += 1
 						# show actual image w/ name
 						await show_unhidden('Correct!', ship_name)
 						break
@@ -83,13 +83,13 @@ class Menu(discord.ui.View):
 
 		# display final scores
 		await interaction.channel.send('**Final Scores**')
-		for player_id, player_score in record.items():
+		for player_id, player_score in game_data.items():
 			await interaction.channel.send(f'<@{player_id}> {player_score}')
 
 		self.update_leaderboard(str(interaction.guild_id))
 
 	def update_leaderboard(self, server_id):
-		for player_id, player_score in record.items():
+		for player_id, player_score in game_data.items():
 			player_id = str(player_id)
 			if player_id not in leaderboard_data[server_id]:
 				leaderboard_data[server_id][player_id] = 0
@@ -208,10 +208,10 @@ async def on_ready():
 
 @bot.command()
 async def start(ctx):
-	global ship_names, record
+	global ship_names, game_data
 
 	ship_names = SHIP_NAMES.copy()
-	record = {}
+	game_data = {}
 	await ctx.send(INFO, view=Menu())
 
 @bot.command(name='lb')
