@@ -190,7 +190,7 @@ bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name='!start !leaderboard'))
+    await bot.change_presence(activity=discord.Game(name='!start !lb'))
 
 @bot.command()
 async def start(ctx):
@@ -200,7 +200,7 @@ async def start(ctx):
 	record = {}
 	await ctx.send(INFO, view=Menu())
 
-@bot.command()
+@bot.command(name='lb')
 async def leaderboard(ctx):
 	server_id = ctx.guild.id
 	has_server_icon = hasattr(ctx.guild.icon, 'url')
