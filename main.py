@@ -36,7 +36,7 @@ class Menu(discord.ui.View):
 			return msg.author.id in record and msg.channel == interaction.channel
 
 		async def show_unhidden(t, ship_name):
-			embed = discord.Embed(title=t)
+			embed = discord.Embed(title=t, description=ship_name)
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/unhidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
 
@@ -77,7 +77,7 @@ class Menu(discord.ui.View):
 				except TimeoutError:
 					# show next image when no correct answer sent in 20 seconds
 					loop = False
-					await show_unhidden(f'Times up! Correct answer: {ship_name}', ship_name)
+					await show_unhidden('Times up!', ship_name)
 
 		# display final scores
 		await interaction.channel.send('**Final Scores**')
