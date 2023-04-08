@@ -63,25 +63,19 @@ class Menu(discord.ui.View):
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/hidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
 
-			# wait for a correct answer for 15 seconds
-			loop = True
-			while loop:
-				try:
-					message = await bot.wait_for('message', check=check, timeout=15)
-					answer = message.content.lower()
-					# score the player who guessed correctly
-					if  answer == ship_name.lower() or answer in alt_names:
-						player_id = message.author.id
-						record[player_id] += 1
-						loop = False
-
-						# show actual image w/ name
-						await show_unhidden('Correct!', ship_name)
-
-				except TimeoutError:
-					# show next image when no correct answer sent in 15 seconds
-					loop = False
-					await show_unhidden('Times up!', ship_name)
+			try:
+				# wait for correct answer for 15 seconds
+				message = await bot.wait_for('message', check=check, timeout=15)
+				answer = message.content.lower()
+				# score the player who guessed correctly
+				if  answer == ship_name.lower() or answer in alt_names:
+					player_id = message.author.id
+					record[player_id] += 1
+					# show actual image w/ name
+					await show_unhidden('Correct!', ship_name)
+			except TimeoutError:
+				# show next image when no correct answer sent in 15 seconds
+				await show_unhidden('Times up!', ship_name)
 
 		# display final scores
 		await interaction.channel.send('**Final Scores**')
@@ -105,9 +99,6 @@ class Menu(discord.ui.View):
 			json.dump(leaderboard_data, f)
 
 class Leaderboard(discord.ui.View):
-	current_page = 1
-	entries_per_page = 10
-
 	@discord.ui.button(label='First Page', style=discord.ButtonStyle.primary)
 	async def first_page(self, interaction, button):
 		self.current_page = 1
@@ -128,7 +119,7 @@ class Leaderboard(discord.ui.View):
 
 	@discord.ui.button(label='Last Page', style=discord.ButtonStyle.primary)
 	async def last_page(self, interaction, button):
-		self.current_page = math.ceil(len(self.data) / self.entries_per_page)
+		self.current_page = self.last_page_num
 		await interaction.response.defer()
 		await self.update_message(self.data, False, True)
 
@@ -172,7 +163,7 @@ class Leaderboard(discord.ui.View):
 			self.first_page.disabled = False
 			self.prev_page.disabled = False
 
-		if self.current_page == math.ceil(len(self.data) / self.entries_per_page):
+		if self.current_page == self.last_page_num:
 			self.next_page.disabled = True
 			self.last_page.disabled = True
 		else:
@@ -206,10 +197,13 @@ async def leaderboard(ctx):
 	has_server_icon = hasattr(ctx.guild.icon, 'url')
 
 	leaderboard = Leaderboard()
-	leaderboard.server_name = bot.get_guild(server_id)
 	leaderboard.data = leaderboard_data[str(server_id)]
+	leaderboard.server_name = bot.get_guild(server_id)
 	leaderboard.user_id = str(ctx.author.id)
+	leaderboard.current_page = 1
+	leaderboard.entries_per_page = 10
 	leaderboard.total_pages = len(leaderboard.data)
+	leaderboard.last_page_num = math.ceil(leaderboard.total_pages / leaderboard.entries_per_page)
 
 	if has_server_icon:
 		leaderboard.server_icon_url = ctx.guild.icon.url
