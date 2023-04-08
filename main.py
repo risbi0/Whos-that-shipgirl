@@ -63,19 +63,23 @@ class Menu(discord.ui.View):
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/hidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
 
-			try:
-				# wait for correct answer for 15 seconds
-				message = await bot.wait_for('message', check=check, timeout=15)
-				answer = message.content.lower()
-				# score the player who guessed correctly
-				if  answer == ship_name.lower() or answer in alt_names:
-					player_id = message.author.id
-					record[player_id] += 1
-					# show actual image w/ name
-					await show_unhidden('Correct!', ship_name)
-			except TimeoutError:
-				# show next image when no correct answer sent in 15 seconds
-				await show_unhidden('Times up!', ship_name)
+			# process sent messages until correct answer or timed out
+			while True:
+				try:
+					# wait for correct answer for 15 seconds
+					message = await bot.wait_for('message', check=check, timeout=15)
+					answer = message.content.lower()
+					# score the player who guessed correctly
+					if  answer == ship_name.lower() or answer in alt_names:
+						player_id = message.author.id
+						record[player_id] += 1
+						# show actual image w/ name
+						await show_unhidden('Correct!', ship_name)
+						break
+				except TimeoutError:
+					# show next image when no correct answer sent in 15 seconds
+					await show_unhidden('Times up!', ship_name)
+					break
 
 		# display final scores
 		await interaction.channel.send('**Final Scores**')
