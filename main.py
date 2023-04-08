@@ -44,6 +44,9 @@ class Menu(discord.ui.View):
 			await interaction.response.send_message(content='No players have joined.')
 			return
 
+		# delete message so no one messes with the buttons mid-game
+		await interaction.message.delete()
+
 		players_msg = '\n'.join([f'<@{player}>' for player in record.keys()])
 		await interaction.response.send_message(content=f'Starting game with players:\n{players_msg}')
 
