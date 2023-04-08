@@ -160,14 +160,18 @@ class Leaderboard(discord.ui.View):
 		return ordinals
 
 	def create_embed(self, record):
-		ranks = self.create_ordinal_list(self.data)
-		user_index = list(self.data).index(self.user_id)
 		embed = discord.Embed(title=f'Leaderboard • {self.server_name}')
-		embed.set_footer(text=f'Page {self.current_page}/{self.last_page_num} • Your leaderboard rank: {self.add_ordinal_suffix(ranks[user_index])}')
 
 		if hasattr(self, 'server_icon_url'):
 			embed.set_thumbnail(url=self.server_icon_url)
 
+		if not self.data:
+			embed.add_field(name='', value='No data available.')
+			return embed
+
+		ranks = self.create_ordinal_list(self.data)
+
+		# fields
 		for index, (player_id, player_score) in enumerate(record.items()):
 			player = bot.get_user(int(player_id))
 			embed.add_field(
@@ -175,6 +179,14 @@ class Leaderboard(discord.ui.View):
 				value=f'**{ranks[index]}.** {player.name}#{player.discriminator}  **•**  {player_score}',
 				inline=False
 			)
+
+		# footer
+		try:
+			user_index = list(self.data).index(self.user_id)
+			rank = self.add_ordinal_suffix(ranks[user_index])
+		except ValueError:
+			rank = 'N/A'
+		embed.set_footer(text=f'Page {self.current_page}/{self.last_page_num} • Your leaderboard rank: {rank}')
 
 		return embed
 
