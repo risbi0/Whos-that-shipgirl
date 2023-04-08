@@ -32,13 +32,6 @@ class Menu(discord.ui.View):
 
 	@discord.ui.button(label='Start Game', style=discord.ButtonStyle.success)
 	async def start_game(self, interaction, button):
-		if len(record) == 0:
-			await interaction.response.send_message(content='No players have joined.')
-			return
-
-		players_msg = '\n'.join([f'<@{player}>' for player in record.keys()])
-		await interaction.response.send_message(content=f'Starting game with players:\n{players_msg}')
-
 		def check(msg):
 			return msg.author.id in record and msg.channel == interaction.channel
 
@@ -46,6 +39,13 @@ class Menu(discord.ui.View):
 			embed = discord.Embed(title=t)
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/unhidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
+
+		if len(record) == 0:
+			await interaction.response.send_message(content='No players have joined.')
+			return
+
+		players_msg = '\n'.join([f'<@{player}>' for player in record.keys()])
+		await interaction.response.send_message(content=f'Starting game with players:\n{players_msg}')
 
 		for i in range(1, 4):
 			# get random shipgirl
