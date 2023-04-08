@@ -145,10 +145,25 @@ class Leaderboard(discord.ui.View):
 
 		return f'{num}{suffix}'
 
+	def create_ordinal_list(self, server_scores):
+		ordinals = []
+		current_ordinal = 1
+		current_score = None
+
+		for score in server_scores.values():
+			if score != current_score:
+				current_ordinal += 1
+				current_score = score
+
+			ordinals.append(current_ordinal - 1)
+
+		return ordinals
+
 	def create_embed(self, record):
-		rank = list(self.data).index(self.user_id) + 1
+		ranks = self.create_ordinal_list(self.data)
+		user_index = list(self.data).index(self.user_id)
 		embed = discord.Embed(title=f'Leaderboard • {self.server_name}')
-		embed.set_footer(text=f'Page {self.current_page}/{self.last_page_num} • Your leaderboard rank: {self.add_ordinal_suffix(rank)}')
+		embed.set_footer(text=f'Page {self.current_page}/{self.last_page_num} • Your leaderboard rank: {self.add_ordinal_suffix(ranks[user_index])}')
 
 		if hasattr(self, 'server_icon_url'):
 			embed.set_thumbnail(url=self.server_icon_url)
@@ -157,7 +172,7 @@ class Leaderboard(discord.ui.View):
 			player = bot.get_user(int(player_id))
 			embed.add_field(
 				name='',
-				value=f'**{index + 1}.** {player.name}#{player.discriminator}  **•**  {player_score}',
+				value=f'**{ranks[index]}.** {player.name}#{player.discriminator}  **•**  {player_score}',
 				inline=False
 			)
 
