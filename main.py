@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from asyncio import TimeoutError
 from discord.ext import commands
 from keep_alive import keep_alive
-import discord, os, random, json, math
+import discord, os, random, json, math, re
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -12,6 +12,14 @@ INFO = 'Guess the name of the shipgirl! 10 rounds and 15 second time limit.'
 
 with open('leaderboard.json', 'r') as f:
     leaderboard_data = json.load(f)
+
+def add_ordinal_suffix(num):
+	if 10 <= num % 100 <= 20:
+		suffix = 'th'
+	else:
+		suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(num % 10, 'th')
+
+	return f'{num}{suffix}'
 
 class Menu(discord.ui.View):
 	global ship_names, game_data
@@ -88,19 +96,40 @@ class Menu(discord.ui.View):
 
 		self.update_leaderboard(str(interaction.guild_id))
 
+	def create_ordinal_list(self, server_data):
+		ordinals = []
+		current_ordinal = 1
+		current_score = None
+
+		for data in server_data.values():
+			if data['score'] != current_score:
+				current_ordinal += 1
+				current_score = data['score']
+
+			ordinals.append(current_ordinal - 1)
+
+		return ordinals
+
 	def update_leaderboard(self, server_id):
+		# add scores to leaderboard
 		for player_id, player_score in game_data.items():
 			player_id = str(player_id)
 			if player_id not in leaderboard_data[server_id]:
-				leaderboard_data[server_id][player_id] = 0
+				leaderboard_data[server_id][player_id] = {}
+				leaderboard_data[server_id][player_id]['score'] = 0
 
-			leaderboard_data[server_id][player_id] += player_score
+			leaderboard_data[server_id][player_id]['score'] += player_score
+
+		# update rankings
+		ranks = self.create_ordinal_list(leaderboard_data[server_id])
+		for index, data in enumerate(leaderboard_data[server_id].values()):
+			data['place'] = add_ordinal_suffix(ranks[index])
 
 		# sort server records
 		leaderboard_data[server_id] = dict(
 			sorted(
 				leaderboard_data[server_id].items(),
-				key=lambda item: item[1],
+				key=lambda item: item[1]['score'],
 				reverse=True
 			)
 		)
@@ -113,53 +142,31 @@ class Leaderboard(discord.ui.View):
 	async def first_page(self, interaction, button):
 		self.current_page = 1
 		await interaction.response.defer()
-		await self.update_message(self.data, True, False)
+		await self.update_message(False, True)
 
 	@discord.ui.button(label='Prev Page', style=discord.ButtonStyle.primary)
 	async def prev_page(self, interaction, button):
 		self.current_page -= 1
 		await interaction.response.defer()
-		await self.update_message(self.data, True, True)
+		await self.update_message(True, True)
 
 	@discord.ui.button(label='Next Page', style=discord.ButtonStyle.primary)
 	async def next_page(self, interaction, button):
 		self.current_page += 1
 		await interaction.response.defer()
-		await self.update_message(self.data, True, True)
+		await self.update_message(True, True)
 
 	@discord.ui.button(label='Last Page', style=discord.ButtonStyle.primary)
 	async def last_page(self, interaction, button):
 		self.current_page = self.last_page_num
 		await interaction.response.defer()
-		await self.update_message(self.data, False, True)
+		await self.update_message(True, False)
 
 	async def send(self, ctx):
 		self.message = await ctx.channel.send(view=self)
-		await self.update_message(self.data, True, False)
+		await self.update_message(False, True)
 
-	def add_ordinal_suffix(self, num):
-		if 10 <= num % 100 <= 20:
-			suffix = 'th'
-		else:
-			suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(num % 10, 'th')
-
-		return f'{num}{suffix}'
-
-	def create_ordinal_list(self, server_scores):
-		ordinals = []
-		current_ordinal = 1
-		current_score = None
-
-		for score in server_scores.values():
-			if score != current_score:
-				current_ordinal += 1
-				current_score = score
-
-			ordinals.append(current_ordinal - 1)
-
-		return ordinals
-
-	def create_embed(self, record):
+	def create_embed(self):
 		embed = discord.Embed(title=f'Leaderboard • {self.server_name}')
 
 		if hasattr(self, 'server_icon_url'):
@@ -169,22 +176,20 @@ class Leaderboard(discord.ui.View):
 			embed.add_field(name='', value='No data available.')
 			return embed
 
-		ranks = self.create_ordinal_list(self.data)
-
 		# fields
-		for index, (player_id, player_score) in enumerate(record.items()):
+		for player_id, details in self.page_display.items():
+			rank = re.sub('[^0-9]', '', details['place'])
 			player = bot.get_user(int(player_id))
 			embed.add_field(
 				name='',
-				value=f'**{ranks[index]}.** {player.name}#{player.discriminator}  **•**  {player_score}',
+				value=f"**{rank}.** {player.name}#{player.discriminator}  **•**  {details['score']}",
 				inline=False
 			)
 
 		# footer
-		try:
-			user_index = list(self.data).index(self.user_id)
-			rank = self.add_ordinal_suffix(ranks[user_index])
-		except ValueError:
+		if self.user_id in self.data:
+			rank = self.data[self.user_id]['place']
+		else:
 			rank = 'N/A'
 		embed.set_footer(text=f'Page {self.current_page}/{self.last_page_num} • Your leaderboard rank: {rank}')
 
@@ -205,12 +210,12 @@ class Leaderboard(discord.ui.View):
 			self.next_page.disabled = False
 			self.last_page.disabled = False
 
-	async def update_message(self, data, bool1, bool2):
+	async def update_message(self, use_start, use_end):
 		self.update_buttons()
-		until_page = self.current_page * self.entries_per_page if bool1 else 0
-		from_page = until_page - self.entries_per_page if bool2 else None
-		data = dict(list(data.items())[from_page:until_page])
-		await self.message.edit(embed=self.create_embed(data), view=self)
+		until_page = self.current_page * self.entries_per_page if use_end else 0
+		from_page = until_page - self.entries_per_page if use_start else None
+		self.page_display = dict(list(self.data.items())[from_page:until_page])
+		await self.message.edit(embed=self.create_embed(), view=self)
 
 bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 
