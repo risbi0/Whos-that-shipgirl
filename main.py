@@ -141,7 +141,7 @@ class Leaderboard(discord.ui.View):
 
 	def create_embed(self, record):
 		rank = list(self.data).index(self.user_id) + 1
-		embed = discord.Embed(title=f'{self.server_name} Leaderboard')
+		embed = discord.Embed(title=f'Leaderboard • {self.server_name}')
 		embed.set_footer(text=f'Page {self.current_page}/{self.last_page_num} • Your leaderboard rank: {self.add_ordinal_suffix(rank)}')
 
 		if hasattr(self, 'server_icon_url'):
