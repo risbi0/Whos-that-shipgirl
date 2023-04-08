@@ -53,8 +53,9 @@ class Menu(discord.ui.View):
 		for i in range(1, 11):
 			# get random shipgirl
 			rand_ship_index = random.randint(0, len(ship_names))
-			ship_name = ship_names[rand_ship_index]
-			ship_names.remove(ship_name)
+			ship_name = ship_names[rand_ship_index]['filename']
+			alt_names = ship_names[rand_ship_index]['names']
+			ship_names.pop(rand_ship_index)
 
 			embed = discord.Embed(title=f'Round {i} of 10')
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/hidden/{ship_name.replace(' ', '%20')}.png")
@@ -65,8 +66,9 @@ class Menu(discord.ui.View):
 			while loop:
 				try:
 					message = await bot.wait_for('message', check=check, timeout=20)
+					answer = message.content.lower()
 					# score the player who guessed correctly
-					if message.content == ship_name or message.content == ship_name.lower():
+					if  answer == ship_name.lower() or answer in alt_names:
 						player_id = message.author.id
 						record[player_id] += 1
 						loop = False
