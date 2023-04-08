@@ -53,7 +53,7 @@ class Menu(discord.ui.View):
 				img = discord.File(image)
 				await interaction.channel.send(file=img)
 
-			# wait for a correct answer for 30 seconds
+			# wait for a correct answer for 20 seconds
 			loop = True
 			while loop:
 				try:
@@ -70,7 +70,7 @@ class Menu(discord.ui.View):
 							img = discord.File(image)
 							await interaction.channel.send(file=img)
 				except TimeoutError:
-					# show next image when no correct answer sent in 30 seconds
+					# show next image when no correct answer sent in 20 seconds
 					await interaction.channel.send(f'Times up! Correct answer: {ship_name}')
 					with open(f'img/unhidden/{ship_name}.png', 'rb') as image:
 						img = discord.File(image)
