@@ -89,6 +89,8 @@ class Menu(discord.ui.View):
 		self.update_leaderboard(str(interaction.guild_id), record)
 
 	def update_leaderboard(self, server_id, record):
+		global leaderboard_data
+
 		if server_id not in leaderboard_data:
 			leaderboard_data[server_id] = {}
 
@@ -98,6 +100,15 @@ class Menu(discord.ui.View):
 				leaderboard_data[server_id][player_id] = 0
 
 			leaderboard_data[server_id][player_id] += player_score
+
+		# sort server records
+		leaderboard_data[server_id] = dict(
+			sorted(
+				leaderboard_data[server_id].items(),
+				key=lambda item: item[1],
+				reverse=True
+			)
+		)
 
 		with open('leaderboard.json', 'w') as f:
 			json.dump(leaderboard_data, f)
@@ -146,8 +157,6 @@ class Leaderboard(discord.ui.View):
 
 		if hasattr(self, 'server_icon_url'):
 			embed.set_thumbnail(url=self.server_icon_url)
-
-		record = dict(sorted(record.items(), key=lambda item: item[1], reverse=True))
 
 		for index, (player_id, player_score) in enumerate(record.items()):
 			player = bot.get_user(int(player_id))
