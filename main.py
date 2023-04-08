@@ -2,6 +2,7 @@ from names import SHIP_NAMES
 from dotenv import load_dotenv
 from asyncio import TimeoutError
 from discord.ext import commands
+from keep_alive import keep_alive
 import discord, os, random, json, math
 
 load_dotenv()
@@ -183,4 +184,5 @@ async def leaderboard(ctx):
 	leaderboard.data = leaderboard_data[server_id]
 	await leaderboard.send(ctx)
 
+keep_alive()
 bot.run(TOKEN)
