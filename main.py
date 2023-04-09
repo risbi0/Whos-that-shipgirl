@@ -27,14 +27,18 @@ class Menu(discord.ui.View):
 	async def join_game(self, interaction, button):
 		# initialize player score
 		game_data[self.server_id]['player_scores'][interaction.user.id] = 0
-		await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id]['player_scores'].keys()])}")
+		await interaction.response.edit_message(content=f"{INFO}\n\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id]['player_scores'].keys()])}")
 		await interaction.followup.send(content='You have joined the game.', ephemeral=True)
 
 	@discord.ui.button(label='Leave Game', style=discord.ButtonStyle.danger)
 	async def leave_game(self, interaction, button):
 		if interaction.user.id in game_data[self.server_id]['player_scores']:
 			del game_data[self.server_id]['player_scores'][interaction.user.id]
-			await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id]['player_scores'].keys()])}")
+			if len(game_data[self.server_id]['player_scores']) != 0:
+				message = f"{INFO}\n\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id]['player_scores'].keys()])}"
+			else:
+				message = INFO
+			await interaction.response.edit_message(content=message)
 			await interaction.followup.send(content='You have left the game.', ephemeral=True)
 		else:
 			await interaction.response.send_message(content='You haven\'t joined the game.', ephemeral=True)
@@ -207,7 +211,7 @@ bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 async def on_ready():
     await bot.change_presence(activity=discord.Game(name='!start !lb'))
 
-@bot.command(name='a')
+@bot.command()
 async def start(ctx):
 	server_id = ctx.guild.id
 
@@ -226,7 +230,7 @@ async def start(ctx):
 	menu.server_id = server_id
 	await ctx.send(INFO, view=menu)
 
-@bot.command(name='lba')
+@bot.command(name='lb')
 async def leaderboard(ctx):
 	server_id = ctx.guild.id
 	has_server_icon = hasattr(ctx.guild.icon, 'url')
