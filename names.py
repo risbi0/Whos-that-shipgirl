@@ -901,7 +901,7 @@ SHIP_NAMES = [
 	},
 	{
 		'filename': 'Hornet II',
-		'names': []
+		'names': ['hornet 2']
 	},
 	{
 		'filename': 'Hornet',
