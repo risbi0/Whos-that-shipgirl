@@ -43,7 +43,7 @@ class Menu(discord.ui.View):
 	@discord.ui.button(label='Start Game', style=discord.ButtonStyle.success)
 	async def start_game(self, interaction, button):
 		def check(msg):
-			return msg.author.id in game_data and msg.channel == interaction.channel
+			return msg.author.id in game_data and msg.guild is not None and msg.guild.id == interaction.guild_id
 
 		async def show_unhidden(t, ship_name):
 			embed = discord.Embed(title=t, description=ship_name)
