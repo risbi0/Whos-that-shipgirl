@@ -8,7 +8,7 @@ import discord, os, random, json, math, re
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-INFO = 'Guess the name of the shipgirl! 10 rounds and 15 second time limit.'
+INFO = 'Guess the name of the shipgirl!\nThere are 10 rounds each with a 15 second time limit.\nEnter `!names` to check all the possible names for each ship.'
 game_data = {}
 
 with open('leaderboard.json', 'r') as f:
@@ -207,7 +207,7 @@ bot = commands.Bot(command_prefix='!', intents=discord.Intents.all())
 async def on_ready():
     await bot.change_presence(activity=discord.Game(name='!start !lb'))
 
-@bot.command()
+@bot.command(name='a')
 async def start(ctx):
 	server_id = ctx.guild.id
 
@@ -226,7 +226,7 @@ async def start(ctx):
 	menu.server_id = server_id
 	await ctx.send(INFO, view=menu)
 
-@bot.command(name='lb')
+@bot.command(name='lba')
 async def leaderboard(ctx):
 	server_id = ctx.guild.id
 	has_server_icon = hasattr(ctx.guild.icon, 'url')
@@ -247,6 +247,35 @@ async def leaderboard(ctx):
 		leaderboard.server_icon_url = ctx.guild.icon.url
 
 	await leaderboard.send(ctx)
+
+@bot.command()
+async def names(ctx):
+	user = await bot.fetch_user(ctx.author.id)
+	messages = []
+	message = 'Here are all the names of all ships. Some have other names which are also correct answers.\n```'
+
+	for index, detail in enumerate(SHIP_NAMES):
+		nicknames = ''
+		if detail['names']:
+			nicknames = f": {', '.join(detail['names'])}"
+
+		line = f"{detail['filename'].lower()}{nicknames}\n"
+
+		# cut message when limit is reached
+		if len(message + line) + 3 > 2000: # added 3 for the following grave accents
+			message += '```'
+			messages.append(message)
+			message = '```'
+
+		message += line
+
+		# add last message
+		if index == len(SHIP_NAMES) - 1:
+			message += '```'
+			messages.append(message)
+
+	for msg in messages:
+		await user.send(msg)
 
 keep_alive()
 bot.run(TOKEN)
