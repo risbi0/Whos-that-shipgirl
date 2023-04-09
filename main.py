@@ -85,7 +85,7 @@ class Menu(discord.ui.View):
 					message = await bot.wait_for('message', check=check, timeout=15)
 					answer = message.content.lower()
 					# score the player who guessed correctly
-					if  answer == ship_name.lower() or answer in alt_names:
+					if answer == ship_name.lower() or answer in alt_names:
 						player_id = message.author.id
 						game_data[self.server_id]['player_scores'][player_id] += 1
 						# show actual image w/ name
