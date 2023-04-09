@@ -97,6 +97,7 @@ class Menu(discord.ui.View):
 			await interaction.channel.send(f'<@{player_id}> {player_score}')
 
 		self.update_leaderboard(str(interaction.guild_id))
+		game_data[self.server_id]['game_ongoing'] = False
 
 	def create_ordinal_list(self, server_data):
 		ordinals = []
@@ -231,9 +232,18 @@ async def on_ready():
 @bot.command()
 async def start(ctx):
 	server_id = ctx.guild.id
+
+	try:
+		if game_data[server_id]['game_ongoing'] == True:
+			await ctx.send('Game is currently ongoing. Please wait for it to end before starting again.')
+			return
+	except KeyError:
+		pass
+
 	game_data[server_id] = {}
 	game_data[server_id]['player_scores'] = {}
 	game_data[server_id]['picked_indices'] = []
+	game_data[server_id]['game_ongoing'] = True
 
 	menu = Menu()
 	menu.server_id = server_id
