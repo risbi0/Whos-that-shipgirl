@@ -1101,7 +1101,7 @@ SHIP_NAMES = [
 	},
 	{
 		'filename': 'Kaga (BB)',
-		'names': []
+		'names': ['kaga bb']
 	},
 	{
 		'filename': 'Kaga',
