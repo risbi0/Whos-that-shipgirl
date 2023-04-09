@@ -127,11 +127,6 @@ class Menu(discord.ui.View):
 
 			leaderboard_data[server_id][player_id]['score'] += player_score
 
-		# update rankings
-		ranks = self.create_ordinal_list(leaderboard_data[server_id])
-		for index, data in enumerate(leaderboard_data[server_id].values()):
-			data['place'] = add_ordinal_suffix(ranks[index])
-
 		# sort server records
 		leaderboard_data[server_id] = dict(
 			sorted(
@@ -140,6 +135,11 @@ class Menu(discord.ui.View):
 				reverse=True
 			)
 		)
+
+		# update rankings
+		ranks = self.create_ordinal_list(leaderboard_data[server_id])
+		for index, data in enumerate(leaderboard_data[server_id].values()):
+			data['place'] = add_ordinal_suffix(ranks[index])
 
 		with open('leaderboard.json', 'w') as f:
 			json.dump(leaderboard_data, f)
