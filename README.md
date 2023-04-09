@@ -4,4 +4,4 @@
 
 Discord bot guessing game for Azur Lane shipgirls.
 
-New characters are added by adding them in the `scripts` folder and running `resize.py` for resizing the images, and `hide.py` for converting the images to silhouettes.
+New characters are added by adding them in the `convert` folder and running `convert.py` which resizes and hides the images.
