@@ -111,6 +111,9 @@ class Menu(discord.ui.View):
 		return ordinals
 
 	def update_leaderboard(self, server_id):
+		if server_id not in leaderboard_data:
+			leaderboard_data[server_id] = {}
+
 		# add scores to leaderboard
 		for player_id, player_score in game_data.items():
 			player_id = str(player_id)
