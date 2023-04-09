@@ -23,20 +23,18 @@ def add_ordinal_suffix(num):
 	return f'{num}{suffix}'
 
 class Menu(discord.ui.View):
-	global ship_names, game_data
-
 	@discord.ui.button(label='Join Game', style=discord.ButtonStyle.primary)
 	async def join_game(self, interaction, button):
 		# initialize player score
-		game_data[self.server_id][interaction.user.id] = 0
-		await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id].keys()])}")
+		game_data[self.server_id]['player_scores'][interaction.user.id] = 0
+		await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id]['player_scores'].keys()])}")
 		await interaction.followup.send(content='You have joined the game.', ephemeral=True)
 
 	@discord.ui.button(label='Leave Game', style=discord.ButtonStyle.danger)
 	async def leave_game(self, interaction, button):
-		if interaction.user.id in game_data[self.server_id]:
-			del game_data[self.server_id][interaction.user.id]
-			await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id].keys()])}")
+		if interaction.user.id in game_data[self.server_id]['player_scores']:
+			del game_data[self.server_id]['player_scores'][interaction.user.id]
+			await interaction.response.edit_message(content=f"{INFO}\n**Participants**\n{''.join([f'<@{player_id}> ' for player_id in game_data[self.server_id]['player_scores'].keys()])}")
 			await interaction.followup.send(content='You have left the game.', ephemeral=True)
 		else:
 			await interaction.response.send_message(content='You haven\'t joined the game.', ephemeral=True)
@@ -44,29 +42,32 @@ class Menu(discord.ui.View):
 	@discord.ui.button(label='Start Game', style=discord.ButtonStyle.success)
 	async def start_game(self, interaction, button):
 		def check(msg):
-			return msg.author.id in game_data[self.server_id] and msg.guild is not None and msg.guild.id == interaction.guild_id
+			return msg.author.id in game_data[self.server_id]['player_scores'] and msg.guild is not None and msg.guild.id == interaction.guild_id
 
 		async def show_unhidden(t, ship_name):
 			embed = discord.Embed(title=t, description=ship_name)
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/unhidden/{ship_name.replace(' ', '%20')}.png")
 			await interaction.channel.send(embed=embed)
 
-		if len(game_data[self.server_id]) == 0:
+		if len(game_data[self.server_id]['player_scores']) == 0:
 			await interaction.response.send_message(content='No players have joined.')
 			return
 
 		# delete message so no one messes with the buttons mid-game
 		await interaction.message.delete()
 
-		players_msg = '\n'.join([f'<@{player_id}>' for player_id in game_data[self.server_id].keys()])
+		players_msg = '\n'.join([f'<@{player_id}>' for player_id in game_data[self.server_id]['player_scores'].keys()])
 		await interaction.response.send_message(content=f'Starting game with players:\n{players_msg}')
 
 		for i in range(1, 11):
 			# get random shipgirl
-			rand_ship_index = random.randint(0, len(ship_names))
-			ship_name = ship_names[rand_ship_index]['filename']
-			alt_names = ship_names[rand_ship_index]['names']
-			ship_names.pop(rand_ship_index)
+			while True:
+				rand_ship_index = random.randint(0, len(SHIP_NAMES))
+				if rand_ship_index not in game_data[self.server_id]['picked_indices']:
+					game_data[self.server_id]['picked_indices'].append(rand_ship_index)
+					break
+			ship_name = SHIP_NAMES[rand_ship_index]['filename']
+			alt_names = SHIP_NAMES[rand_ship_index]['names']
 
 			embed = discord.Embed(title=f'Round {i} of 10')
 			embed.set_image(url=f"https://raw.githubusercontent.com/risbi0/Whos-that-shipgirl/main/img/hidden/{ship_name.replace(' ', '%20')}.png")
@@ -81,7 +82,7 @@ class Menu(discord.ui.View):
 					# score the player who guessed correctly
 					if  answer == ship_name.lower() or answer in alt_names:
 						player_id = message.author.id
-						game_data[self.server_id][player_id] += 1
+						game_data[self.server_id]['player_scores'][player_id] += 1
 						# show actual image w/ name
 						await show_unhidden('Correct!', ship_name)
 						break
@@ -92,7 +93,7 @@ class Menu(discord.ui.View):
 
 		# display final scores
 		await interaction.channel.send('**Final Scores**')
-		for player_id, player_score in game_data[self.server_id].items():
+		for player_id, player_score in game_data[self.server_id]['player_scores'].items():
 			await interaction.channel.send(f'<@{player_id}> {player_score}')
 
 		self.update_leaderboard(str(interaction.guild_id))
@@ -116,7 +117,7 @@ class Menu(discord.ui.View):
 			leaderboard_data[server_id] = {}
 
 		# add scores to leaderboard
-		for player_id, player_score in game_data[self.server_id].items():
+		for player_id, player_score in game_data[self.server_id]['player_scores'].items():
 			player_id = str(player_id)
 			if player_id not in leaderboard_data[server_id]:
 				leaderboard_data[server_id][player_id] = {}
@@ -229,11 +230,10 @@ async def on_ready():
 
 @bot.command()
 async def start(ctx):
-	global ship_names, game_data
-
 	server_id = ctx.guild.id
 	game_data[server_id] = {}
-	ship_names = SHIP_NAMES.copy()
+	game_data[server_id]['player_scores'] = {}
+	game_data[server_id]['picked_indices'] = []
 
 	menu = Menu()
 	menu.server_id = server_id
