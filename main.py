@@ -145,33 +145,21 @@ class Menu(discord.ui.View):
 			json.dump(leaderboard_data, f)
 
 class Leaderboard(discord.ui.View):
-	@discord.ui.button(label='First Page', style=discord.ButtonStyle.primary)
-	async def first_page(self, interaction, button):
-		self.current_page = 1
-		await interaction.response.defer()
-		await self.update_message(False, True)
-
 	@discord.ui.button(label='Prev Page', style=discord.ButtonStyle.primary)
 	async def prev_page(self, interaction, button):
 		self.current_page -= 1
 		await interaction.response.defer()
-		await self.update_message(True, True)
+		await self.update_message()
 
 	@discord.ui.button(label='Next Page', style=discord.ButtonStyle.primary)
 	async def next_page(self, interaction, button):
 		self.current_page += 1
 		await interaction.response.defer()
-		await self.update_message(True, True)
-
-	@discord.ui.button(label='Last Page', style=discord.ButtonStyle.primary)
-	async def last_page(self, interaction, button):
-		self.current_page = self.last_page_num
-		await interaction.response.defer()
-		await self.update_message(True, False)
+		await self.update_message()
 
 	async def send(self, ctx):
 		self.message = await ctx.channel.send(view=self)
-		await self.update_message(False, True)
+		await self.update_message()
 
 	def create_embed(self):
 		embed = discord.Embed(title=f'Leaderboard • {self.server_name}')
@@ -203,24 +191,13 @@ class Leaderboard(discord.ui.View):
 		return embed
 
 	def update_buttons(self):
-		if self.current_page == 1:
-			self.first_page.disabled = True
-			self.prev_page.disabled = True
-		else:
-			self.first_page.disabled = False
-			self.prev_page.disabled = False
+		self.prev_page.disabled = self.current_page == 1
+		self.next_page.disabled = self.current_page == self.last_page_num
 
-		if self.current_page == self.last_page_num:
-			self.next_page.disabled = True
-			self.last_page.disabled = True
-		else:
-			self.next_page.disabled = False
-			self.last_page.disabled = False
-
-	async def update_message(self, use_start, use_end):
+	async def update_message(self):
 		self.update_buttons()
-		until_page = self.current_page * self.entries_per_page if use_end else 0
-		from_page = until_page - self.entries_per_page if use_start else None
+		until_page = self.current_page * self.entries_per_page
+		from_page = until_page - self.entries_per_page
 		self.page_display = dict(list(self.data.items())[from_page:until_page])
 		await self.message.edit(embed=self.create_embed(), view=self)
 
