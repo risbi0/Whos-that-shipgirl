@@ -245,12 +245,16 @@ async def leaderboard(ctx):
 	has_server_icon = hasattr(ctx.guild.icon, 'url')
 
 	leaderboard = Leaderboard()
-	leaderboard.data = leaderboard_data[str(server_id)]
 	leaderboard.server_name = bot.get_guild(server_id)
 	leaderboard.user_id = str(ctx.author.id)
 	leaderboard.current_page = 1
 	leaderboard.entries_per_page = 10
-	leaderboard.last_page_num = math.ceil(len(leaderboard.data) / leaderboard.entries_per_page)
+	try:
+		leaderboard.data = leaderboard_data[str(server_id)]
+		leaderboard.last_page_num = math.ceil(len(leaderboard.data) / leaderboard.entries_per_page)
+	except KeyError:
+		leaderboard.data = {}
+		leaderboard.last_page_num = 1
 
 	if has_server_icon:
 		leaderboard.server_icon_url = ctx.guild.icon.url
