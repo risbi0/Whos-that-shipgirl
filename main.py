@@ -53,6 +53,7 @@ class Menu(discord.ui.View):
 			await interaction.response.send_message(content='No players have joined.')
 			return
 
+		game_data[self.server_id]['game_ongoing'] = True
 		# delete message so no one messes with the buttons mid-game
 		await interaction.message.delete()
 
@@ -243,7 +244,6 @@ async def start(ctx):
 	game_data[server_id] = {}
 	game_data[server_id]['player_scores'] = {}
 	game_data[server_id]['picked_indices'] = []
-	game_data[server_id]['game_ongoing'] = True
 
 	menu = Menu()
 	menu.server_id = server_id
