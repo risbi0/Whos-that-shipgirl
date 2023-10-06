@@ -19,7 +19,6 @@ def add_ordinal_suffix(num):
 		suffix = 'th'
 	else:
 		suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(num % 10, 'th')
-
 	return f'{num}{suffix}'
 
 class Menu(discord.ui.View):
